@@ -82,10 +82,7 @@ curve_point  curve_point_add(const ecdsa_curve *curve, const curve_point *cp1, c
     bn_subtractmod(&yr, &(cp1->y), &yr, &curve->prime);
     bn_fast_mod(&yr, &curve->prime);
     bn_mod(&yr, &curve->prime);
-    // 从外边调用的时候 断点显示 xr已经赋值给了cp2 -> x 但是 po &cp2 -> x的时候 值并没有变
-//    cp2->x = xr;
-//    cp2->y = yr;
-    // 新建一个变量赋值都不行
+
     curve_point finalP = {0, 0};
     finalP.x = xr;
     finalP.y = yr;
@@ -882,38 +879,24 @@ void ecdsa_get_public_with_curve_point(const ecdsa_curve *curve, curve_point *cp
 }
 
 void ecdsa_get_childAccount_key65(const ecdsa_curve *curve, const uint8_t *priv_key, const uint8_t *othersPri_key, uint8_t *community_pub_key, uint8_t *temp_child_pub_key) {
-    // compute k*G 这个k变成了 hash(aB) aB用点乘 point_multiply 外层套一个KECCAK256 作为k
-    // 要解决的是 要把B这个点的x y都传进来 才能调用 point_multiply
-    // 最后返回处理完成的公钥的x坐标
-    
-    // 虚拟一个委员会的点 用这个点和传进来的pri_key做 point_multiply得到一个新的点
+
     curve_point communityR;
     bignum256 communityK;
     bn_read_be(priv_key, &communityK);
     // compute k*G
     scalar_multiply(curve, &communityK, &communityR);
 
-    
-    //TEST: -------------这块把委员会的公钥硬编码进去
-    //0x04757c1c55a3933bcf413035aba0db6a912826039db2a87b0ea18b539be11530f7ff4dcbd8ab73789bb87390b34a3befa8f9f094eedcb24364ab63a8d61dce07a7
-    
-    // 委员会的pubkey community_pub_key
 
     community_pub_key[0] = 0x04;
     bn_write_be(&communityR.x, community_pub_key + 1);
     bn_write_be(&communityR.y, community_pub_key + 33);
-    // 到这 委员会的点（B 公钥）已经创建完成
-    
-    // 算(aB) a 就是传进来的othersPri_key
+
     curve_point tempChildAccountR;
     bignum256 tempChildK;
     bn_read_be(othersPri_key, &tempChildK);
-    
-    // res = k * p
-    //void point_multiply(const ecdsa_curve *curve, const bignum256 *k, const curve_point *p, curve_point *res)
-    
+
     point_multiply(curve, &tempChildK, &communityR, &tempChildAccountR);
-    // 算hash(aB) tempChildAccountR就是aB之后的值 这块得在外面算KECCAK256
+
     temp_child_pub_key[0] = 0x04;
     bn_write_be(&tempChildAccountR.x, temp_child_pub_key + 1);
     bn_write_be(&tempChildAccountR.y, temp_child_pub_key + 33);
@@ -932,18 +915,14 @@ void ecdsa_get_childAccount2_key65(const ecdsa_curve *curve, const curve_point c
     community_pub_key[0] = 0x04;
     bn_write_be(&communityPoint.x, community_pub_key + 1);
     bn_write_be(&communityPoint.y, community_pub_key + 33);
-    // 到这 委员会的点（B 公钥）已经创建完成
-    
-    // 算(aB) a 就是传进来的othersPri_key
+
     curve_point tempChildAccountR;
     bignum256 tempChildK;
     bn_read_be(othersPri_key, &tempChildK);
     
-    // res = k * p
-    //void point_multiply(const ecdsa_curve *curve, const bignum256 *k, const curve_point *p, curve_point *res)
     
     point_multiply(curve, &tempChildK, &communityPoint, &tempChildAccountR);
-    // 算hash(aB) tempChildAccountR就是aB之后的值 这块得在外面算KECCAK256
+
     temp_child_pub_key[0] = 0x04;
     bn_write_be(&tempChildAccountR.x, temp_child_pub_key + 1);
     bn_write_be(&tempChildAccountR.y, temp_child_pub_key + 33);
@@ -1074,7 +1053,7 @@ int ecdsa_address_decode(const char *addr, uint32_t version, uint8_t *out)
 		return base58_decode_check(addr, out, 24) == 24 && out[0] == (version >> 24) && out[1] == ((version >> 16) & 0xFF) && out[2] == ((version >> 8) & 0xFF) && out[3] == (version & 0xFF);
 	}
 }
-// 这个目前来看是靠谱的 给一个x恢复出来y
+
 void uncompress_coords(const ecdsa_curve *curve, uint8_t odd, const bignum256 *x, bignum256 *y)
 {
 	// y^2 = x^3 + a*x + b

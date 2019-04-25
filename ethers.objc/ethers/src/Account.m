@@ -712,158 +712,103 @@ static NSString *MessagePrefix = @"Ethereum Signed Message:\n%d";
 }
 
 + (instancetype)getPublicKeyWithPrivateKey: (NSData *)privateKey {
-    // 用私钥去初始化一个SecureData 返回这个私钥
-    SecureData *tempPrivateKey = [SecureData secureDataWithData:privateKey];
-    // 初始化一个65字节的publicKey
-    SecureData *publicKey = [SecureData secureDataWithLength:65];
-    // 用私钥调用椭圆曲线加密算法生成公钥
-    ecdsa_get_public_key65(&secp256k1, tempPrivateKey.bytes, publicKey.mutableBytes);
-    // 由公钥获取地址data
-    NSData *addressData = [[[publicKey subdataFromIndex:1] KECCAK256] subdataFromIndex:12].data;
-    // 地址转成字符串形式
-    NSString *tempAddress = [Address addressWithData:addressData];
     
+    SecureData *tempPrivateKey = [SecureData secureDataWithData:privateKey];
+    SecureData *publicKey = [SecureData secureDataWithLength:65];
+    ecdsa_get_public_key65(&secp256k1, tempPrivateKey.bytes, publicKey.mutableBytes);
+    NSData *addressData = [[[publicKey subdataFromIndex:1] KECCAK256] subdataFromIndex:12].data;
+    NSString *tempAddress = [Address addressWithData:addressData];
     return publicKey;
+    
 }
 
-// hash(aB)
 + (instancetype)getChildKeyWithPrivateKey: (NSDate *)privateKey AndOtherPriKey: (NSData *)mainAccountPriKey {
-    // 委员会的私钥
+    
     SecureData *communityPrivateKey = [SecureData secureDataWithData:privateKey];
-    // 主账号的私钥
     SecureData *mainAccountPrivateKey = [SecureData secureDataWithData:mainAccountPriKey];
-    // 初始化一个65字节的委员会公钥 作为容器
     SecureData *communityPublicKey = [SecureData secureDataWithLength:65];
-    // 初始化一个temp_child的公钥容器
     SecureData *tempChildPublicKey = [SecureData secureDataWithLength:65];
-    // 用私钥调用椭圆曲线加密算法生成公钥
     ecdsa_get_childAccount_key65(&secp256k1, communityPrivateKey.bytes, mainAccountPrivateKey.bytes, communityPublicKey.mutableBytes, tempChildPublicKey.mutableBytes);
-    
-    
-    // 由公钥获取地址data
     NSData *communityAddressData = [[[communityPublicKey subdataFromIndex:1] KECCAK256] subdataFromIndex:12].data;
     NSData *tempChildAddressData = [[[tempChildPublicKey subdataFromIndex:1] KECCAK256] subdataFromIndex:12].data;
-    // 地址转成字符串形式
     NSString *communityAddress = [Address addressWithData:communityAddressData];
     NSString *tempChildAddress = [Address addressWithData:tempChildAddressData];
-    
-    // tempChildPublicKey 就是aB后的结果 此处做hash(aB)  KECCAK256
     tempChildPublicKey = [tempChildPublicKey KECCAK256];
-    
     return tempChildPublicKey;
+    
 }
 
 
 + (instancetype)pointFromPublic: (NSData *)sourcePublicKey mainAccountPrivateKey: (NSData *)mainAccountPrivateKey {
     
-    // 公钥恢复成点
     curve_point communityPoint;
     ecdsa_read_pubkey(&secp256k1, sourcePublicKey.bytes, &communityPoint);
-    // 把这个点公钥传进生成 hash(aB）的方法中
-    // 点没错
-//       SecureData *tempChildTestPublicKey = [SecureData secureDataWithLength:65];
-//    ecdsa_get_public_with_curve_point(&secp256k1, &communityPoint, tempChildTestPublicKey.mutableBytes);
-    
-    // 初始化一个65字节的委员会公钥 作为容器
-  
     SecureData *communityPublicKey = [SecureData secureDataWithLength:65];
-    // 初始化一个temp_child的公钥容器
     SecureData *tempChildPublicKey = [SecureData secureDataWithLength:65];
     ecdsa_get_childAccount2_key65(&secp256k1, communityPoint, mainAccountPrivateKey.bytes, communityPublicKey.mutableBytes, tempChildPublicKey.mutableBytes);
-
-    // tempChildPublicKey 就是aB后的结果 此处做hash(aB)  KECCAK256
     tempChildPublicKey = [tempChildPublicKey KECCAK256];
-    
     return tempChildPublicKey;
+    
 }
 
 
-// 把hash(aB)G 和 S 传进来 做加法 这个传进来的其实是公钥   S是一个随机账户的公钥
+
 + (NSData *)pointAddWith: (NSData *)sourcePoint AndDesPoint: (NSData *)desPoint {
-    
-//        point_add(<#const ecdsa_curve *curve#>, <#const curve_point *cp1#>, <#curve_point *cp2#>)
-    //int ecdsa_read_pubkey(const ecdsa_curve *curve, const uint8_t *pub_key, curve_point *pub);
+
     curve_point preAdderR;
     curve_point nextAdderR;
-    //curve_point finalR;
     ecdsa_read_pubkey(&secp256k1, sourcePoint.bytes, &preAdderR);
     ecdsa_read_pubkey(&secp256k1, desPoint.bytes, &nextAdderR);
-    // 到这 两个点拿出来了
-    // 做两个点相加 直接调用pointAdd 最后的赋不上值啊 单独拎一个方法出来吧
-    // 系统的也是这问题，可能是lldb取值的时候 有问题吧 内存显示是改了 不管了 先这样
     point_add(&secp256k1, &preAdderR, &nextAdderR);
-    // 这个是单拎出来的方法
-//    finalR = (curve_point_add(&secp256k1, &preAdderR, &nextAdderR));
-    
-    // hash(aB)G + S 也Ok了
-    // 下一步就是把这个点的公钥搞出来  点=====>公钥
-    // ecdsa_get_public_with_curve_point
     SecureData *publicKey = [SecureData secureDataWithLength:65];
     ecdsa_get_public_with_curve_point(&secp256k1, &nextAdderR, publicKey.mutableBytes);
     return publicKey.data;
+    
 }
 
-// 这个方法是传进来一个x恢复ys并返回整个公钥的函数
+
 +(instancetype)getUncompressedPubKeyWithX: (NSData *)x {
+    
     curve_point pubPoint;
     //curve_point finalR;
     ecdsa_read_pubkey(&secp256k1, x.bytes, &pubPoint);
     SecureData *unCompressPubKey = [SecureData secureDataWithLength:65];
     ecdsa_get_public_with_curve_point(&secp256k1, &pubPoint, unCompressPubKey.mutableBytes);
     return unCompressPubKey;
+    
 }
 
 - (instancetype)getPrivateKeyWithMnemonicPhrase: (NSString*)mnemonicPhrase
                                         Andslot:(int)slot {
-        // 转换成cs字符串
+
         const char* phraseStr = [mnemonicPhrase cStringUsingEncoding:NSUTF8StringEncoding];
-        // 检查phraseStr
         if (!mnemonic_check(phraseStr)) { return nil; }
-        // 用助记词生成seed
         SecureData *seed = [SecureData secureDataWithLength:(512 / 8)];
         mnemonic_to_seed(phraseStr, "", seed.mutableBytes, NULL);
-        
         HDNode node;
         hdnode_from_seed([seed bytes], (int)[seed length], SECP256K1_NAME, &node);
-        
         hdnode_private_ckd(&node, (0x80000000 | (44)));   // 44' - BIP 44 (purpose field)
         hdnode_private_ckd(&node, (0x80000000 | (60)));   // 60' - Ethereum (see SLIP 44)
         hdnode_private_ckd(&node, (0x80000000 | (0)));    // 0'  - Account 0
         hdnode_private_ckd(&node, 0);                     // 0   - External
         hdnode_private_ckd(&node, slot);                     // 0   - Slot #0
-        // 获得privatekey
         SecureData *privateKey = [SecureData secureDataWithLength:32];
         memcpy(privateKey.mutableBytes, node.private_key, 32);
         return privateKey;
+    
     }
 
 + (NSData *)privateKeyAddWith: (NSData *)priA AndPrivateKey: (NSData *)priB {
-    // 私钥的加法 就是先把私钥变成bignumber bn
-    // 然后调用bn里面的方法 有一个bn_add    还有一个bn_modadd 得看看这两个有什么区别
-    // 验证的时候看生成的h 能否生成H
-   // priA.data
-//    typedef struct {
-//        uint32_t val[9];
-//    } bignum256;
-    bignum256 priAK;
-    bignum256  priBK;
-    bn_read_be(priA.bytes, &priAK);
-    bn_read_be(priB.bytes, &priBK);
-    // 参数是 a b =======>  运算之后是 a = a + b
-    bn_add(&priAK, &priBK);
     
-    // 得把priAK编程16进制的
-    // convert a normalized bignum to a raw bigendian 256 bit number.
-    // in_number must be fully reduced.
-    // void bn_write_be(const bignum256 *in_number, uint8_t *out_number)
-    // NSData *priKeyData = [NSData new];
-    // 这个write算法崩溃了 感觉这地方不应该调用write啊 我只想做bignum->nsdata
+        bignum256 priAK;
+        bignum256  priBK;
+        bn_read_be(priA.bytes, &priAK);
+        bn_read_be(priB.bytes, &priBK);
+        bn_add(&priAK, &priBK);
         SecureData *privateKey = [SecureData secureDataWithLength:32];
         bn_write_be(&priAK, privateKey.mutableBytes);
-
-    // 这块赋值没赋上啊 还有空指针错误 得研究一下
-    // 要不别用 bignum256了 用bignumber吧
         return  privateKey.mutableBytes;
+    
 }
 
 
