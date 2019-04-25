@@ -73,19 +73,8 @@
 @interface Account : NSObject
 
 + (instancetype)accountWithPrivateKey: (NSData*)privateKey;
-// 扩展这个方法 通过传不同的slot达到地址不同的目的
-+ (instancetype)accountWithMnemonicPhrase: (NSString*)phrase
-                                                                            slot:(int)slot;
-+ (instancetype)accountWithMnemonicData: (NSData*)data
-                                                                            slot:(int)slot;
 
 + (instancetype)randomMnemonicAccount;
-    
-    // 用助记词获取私钥
-- (instancetype)getPrivateKeyWithMnemonicPhrase: (NSString*)mnemonicPhrase
-                                                                                    Andslot:(int)slot;
-// 用私钥获取公钥
-+ (instancetype)getPublicKeyWithPrivateKey: (NSData *)privateKey;
 
 + (Cancellable*)decryptSecretStorageJSON: (NSString*)json
                                 password: (NSString*)password
@@ -93,9 +82,6 @@
 
 - (Cancellable*)encryptSecretStorageJSON: (NSString*)password
                                 callback: (void (^)(NSString *json))callback;
-
-//+ (BOOL)isCrowdsaleJSON: (NSString*)json;
-//+ (instancetype)decryptCrowdsaleJSON: (NSString*)json password: (NSString*)password;
 
 
 @property (nonatomic, readonly) Address *address;
@@ -117,22 +103,24 @@
 + (BOOL)isValidMnemonicPhrase: (NSString*)phrase;
 + (BOOL)isValidMnemonicWord: (NSString*)word;
 
-//privateKey 是委员会的私钥 mainAccountPriKey是主账户的私钥 hash(aB)
+// EXTENSION
++ (instancetype)accountWithMnemonicPhrase: (NSString*)phrase
+                                     slot:(int)slot;
++ (instancetype)accountWithMnemonicData: (NSData*)data
+                                   slot:(int)slot;
+
+- (instancetype)getPrivateKeyWithMnemonicPhrase: (NSString*)mnemonicPhrase
+                                        Andslot:(int)slot;
+
++ (instancetype)getPublicKeyWithPrivateKey: (NSData *)privateKey;
+
 + (instancetype)getChildKeyWithPrivateKey: (NSDate *)privateKey AndOtherPriKey: (NSData *)mainAccountPriKey;
 
-
-//// cp2 = cp1 + cp2
-//void point_add(const ecdsa_curve *curve, const curve_point *cp1, curve_point *cp2)
-
-// + S 传进来两个公钥 做加法
 + (NSData *)pointAddWith: (NSData *)sourcePoint AndDesPoint: (NSData *)desPoint;
 
-// + s 传进来两个私钥 s
 + (NSData *)privateKeyAddWith: (NSData *)priA AndPrivateKey: (NSData *)priB;
 
-// 这个方法是传进来一个x恢复ys并返回整个公钥的函数
 +(instancetype)getUncompressedPubKeyWithX: (NSData *)x;
-
 
 + (instancetype)pointFromPublic: (NSData *)sourcePublicKey mainAccountPrivateKey: (NSData *)mainAccountPrivateKey;
 
