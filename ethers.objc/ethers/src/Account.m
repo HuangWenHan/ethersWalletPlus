@@ -798,6 +798,27 @@ static NSString *MessagePrefix = @"Ethereum Signed Message:\n%d";
     
     }
 
+- (instancetype)getPublicKeyWithMnemonicPhrase: (NSString*)mnemonicPhrase
+                                        Andslot:(int)slot {
+    
+    const char* phraseStr = [mnemonicPhrase cStringUsingEncoding:NSUTF8StringEncoding];
+    if (!mnemonic_check(phraseStr)) { return nil; }
+    SecureData *seed = [SecureData secureDataWithLength:(512 / 8)];
+    mnemonic_to_seed(phraseStr, "", seed.mutableBytes, NULL);
+    HDNode node;
+    hdnode_from_seed([seed bytes], (int)[seed length], SECP256K1_NAME, &node);
+    hdnode_public_ckd(&node, (0x00000000 | (44)));   // 44' - BIP 44 (purpose field)
+    hdnode_public_ckd(&node, (0x00000000 | (60)));   // 60' - Ethereum (see SLIP 44)
+    hdnode_public_ckd(&node, (0x00000000 | (0)));    // 0'  - Account 0
+    hdnode_public_ckd(&node, 0);                     // 0   - External
+    hdnode_public_ckd(&node, slot);                     // 0   - Slot #0
+    SecureData *publicKey = [SecureData secureDataWithLength:65];
+    memcpy(publicKey.mutableBytes, node.public_key, 65);
+    return publicKey;
+    
+}
+
+
 + (NSData *)privateKeyAddWith: (NSData *)priA AndPrivateKey: (NSData *)priB {
     
         bignum256 priAK;
@@ -809,6 +830,20 @@ static NSString *MessagePrefix = @"Ethereum Signed Message:\n%d";
         bn_write_be(&priAK, privateKey.mutableBytes);
         return  privateKey.mutableBytes;
     
+}
+
++ (SecureData *)privateKeyAddModWith: (NSData *)priA AndPrivateKey: (NSData *)priB AndPrime: (NSData *)prime {
+    bignum256 priAK;
+    bignum256  priBK;
+    bignum256 primeK;
+    bn_read_be(priA.bytes, &priAK);
+    bn_read_be(priB.bytes, &priBK);
+    bn_read_be(prime.bytes, &primeK);
+    bn_addmod(&priAK, &priBK, &primeK);
+
+    SecureData *privateKey = [SecureData secureDataWithLength:32];
+    bn_write_be(&priAK, privateKey.mutableBytes);
+    return  privateKey;
 }
 
 

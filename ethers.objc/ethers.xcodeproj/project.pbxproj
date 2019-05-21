@@ -471,8 +471,8 @@
 				E2317E7E1E31970900DBE3E4 /* Payment.m */,
 				E2FA03D01E406FB30013E5A7 /* Signature.h */,
 				E2FA03D11E406FB30013E5A7 /* Signature.m */,
-				E2317E8D1E31970900DBE3E4 /* Transaction.h */,
 				E2317E8E1E31970900DBE3E4 /* Transaction.m */,
+				E2317E8D1E31970900DBE3E4 /* Transaction.h */,
 				E2317E831E31970900DBE3E4 /* TransactionInfo.h */,
 				E2317E841E31970900DBE3E4 /* TransactionInfo.m */,
 			);
@@ -605,6 +605,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = E2317E591E3191AC00DBE3E4;

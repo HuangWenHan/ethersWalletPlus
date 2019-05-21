@@ -223,6 +223,33 @@ static NSDictionary *DefaultApplications = nil;
     
     [self checkCanary];
     
+    Account *testMainAccount = [Account randomMnemonicAccount];
+    NSLog(@"%@", testMainAccount);
+    SecureData *testMainPrivateKey = [testMainAccount getPrivateKeyWithMnemonicPhrase:testMainAccount.mnemonicPhrase Andslot:0];
+    NSLog(@"%@", testMainPrivateKey.hexString);
+    SecureData *testPublickey = [Account getPublicKeyWithPrivateKey:testMainPrivateKey.data];
+    NSLog(@"%@", testPublickey.hexString);
+    SecureData *derivationPub =  [testMainAccount getPublicKeyWithMnemonicPhrase:testMainAccount.mnemonicPhrase Andslot:0];
+    NSLog(@"%@", derivationPub.hexString);
+    
+    SecureData *tempData = [SecureData secureDataWithHexString:@"0x025a37c5e8962b0c157a15146456073fb6a61dc48bbec624ab3972d65ddbb2867e"];
+    
+    SecureData *unCompressPubKey = [Account getUncompressedPubKeyWithX:tempData.data];
+    NSLog(@"%@", unCompressPubKey.hexString);
+    
+    
+    
+    
+    //h
+//    let childAccountPriKey = Account.privateKeyAdd(with: secureHalfEncryptPrivateKeyL.data(), andPrivateKey: firstRandomAccount?.privateKey)
+    SecureData *hashaB = [SecureData secureDataWithHexString:@"0xeb829c3ff66da3baebc614a36cbf176669cece0b14202be48dd2a728e66995cb"];
+    SecureData *s = [SecureData secureDataWithHexString:@"0xebb16e7a2046f5b9382d6f7aa03f54de6a9e820c7d0a48ed4b5207a047f0baf3"];
+    SecureData *prime = [SecureData secureDataWithHexString:@"0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"];
+   // SecureData *h = [Account privateKeyAddWith:hashaB.data AndPrivateKey:s.data];
+    SecureData *h = [Account privateKeyAddModWith:hashaB.data AndPrivateKey:s.data AndPrime:prime.data];
+    NSLog(@"%@", h);
+    
+    
     return YES;
 }
 

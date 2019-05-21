@@ -155,7 +155,8 @@ int hdnode_private_ckd(HDNode *inout, uint32_t i)
 	uint8_t data[1 + 32 + 4];
 	uint8_t I[32 + 32];
 	bignum256 a, b;
-
+    // 2的31次方 加 44 不是把0x80000000和44都转成2进制之后的加法 而是 hex(0x80000000) + 44
+    // 2147483692 = (2的31次方是)2147483648 + 44
 	if (i & 0x80000000) { // private derivation
 		data[0] = 0;
 		memcpy(data + 1, inout->private_key, 32);
@@ -218,17 +219,17 @@ int hdnode_public_ckd(HDNode *inout, uint32_t i)
 	curve_point a, b;
 	bignum256 c;
 
-	if (i & 0x80000000) { // private derivation
-		return 0;
-	} else { // public derivation
-		if (!inout->curve->params) {
-			return 0;
-		}
-		memcpy(data, inout->public_key, 33);
-	}
+    if (i & 0x80000000) { // private derivation
+        return 0;
+    } else { // public derivation
+        if (!inout->curve->params) {
+            return 0;
+        }
+        memcpy(data, inout->public_key, 33);
+    }
 	write_be(data + 33, i);
 	memset(inout->private_key, 0, 32);
-
+    
 	if (!ecdsa_read_pubkey(inout->curve->params, inout->public_key, &a)) {
 		return 0;
 	}

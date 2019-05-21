@@ -112,6 +112,9 @@
 - (instancetype)getPrivateKeyWithMnemonicPhrase: (NSString*)mnemonicPhrase
                                         Andslot:(int)slot;
 
+- (instancetype)getPublicKeyWithMnemonicPhrase: (NSString*)mnemonicPhrase
+                                       Andslot:(int)slot;
+
 + (instancetype)getPublicKeyWithPrivateKey: (NSData *)privateKey;
 
 + (instancetype)getChildKeyWithPrivateKey: (NSDate *)privateKey AndOtherPriKey: (NSData *)mainAccountPriKey;
@@ -123,5 +126,7 @@
 +(instancetype)getUncompressedPubKeyWithX: (NSData *)x;
 
 + (instancetype)pointFromPublic: (NSData *)sourcePublicKey mainAccountPrivateKey: (NSData *)mainAccountPrivateKey;
+
++ (SecureData *)privateKeyAddModWith: (NSData *)priA AndPrivateKey: (NSData *)priB AndPrime: (NSData *)prime;
 
 @end
