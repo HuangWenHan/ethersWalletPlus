@@ -819,7 +819,7 @@ static NSString *MessagePrefix = @"Ethereum Signed Message:\n%d";
 }
 
 
-+ (NSData *)privateKeyAddWith: (NSData *)priA AndPrivateKey: (NSData *)priB {
++ (SecureData *)privateKeyAddWith: (NSData *)priA AndPrivateKey: (NSData *)priB {
     
         bignum256 priAK;
         bignum256  priBK;
@@ -828,7 +828,7 @@ static NSString *MessagePrefix = @"Ethereum Signed Message:\n%d";
         bn_add(&priAK, &priBK);
         SecureData *privateKey = [SecureData secureDataWithLength:32];
         bn_write_be(&priAK, privateKey.mutableBytes);
-        return  privateKey.mutableBytes;
+        return  privateKey;
     
 }
 

@@ -248,7 +248,8 @@ static NSDictionary *DefaultApplications = nil;
    // SecureData *h = [Account privateKeyAddWith:hashaB.data AndPrivateKey:s.data];
     SecureData *h = [Account privateKeyAddModWith:hashaB.data AndPrivateKey:s.data AndPrime:prime.data];
     NSLog(@"%@", h);
-    
+    SecureData *fakeH = [Account privateKeyAddWith:hashaB.data AndPrivateKey:s.data];
+    NSLog(@"%@", fakeH);
     
     return YES;
 }

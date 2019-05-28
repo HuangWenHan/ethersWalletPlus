@@ -121,7 +121,7 @@
 
 + (NSData *)pointAddWith: (NSData *)sourcePoint AndDesPoint: (NSData *)desPoint;
 
-+ (NSData *)privateKeyAddWith: (NSData *)priA AndPrivateKey: (NSData *)priB;
++ (SecureData *)privateKeyAddWith: (NSData *)priA AndPrivateKey: (NSData *)priB;
 
 +(instancetype)getUncompressedPubKeyWithX: (NSData *)x;
 
